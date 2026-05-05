@@ -1,17 +1,33 @@
+"""
+feature_engineer.py – FreqAI-inspired automatic feature expansion.
+"""
 import pandas as pd
 import numpy as np
-import talib as ta
-from typing import List, Dict
+import pandas_ta as ta
+from typing import List
 
 class FeatureEngineer:
-    def populate_features(self, df: pd.DataFrame, periods: List[int] = [8, 14, 20, 50]) -> pd.DataFrame:
+    def __init__(self):
+        pass
+
+    def populate_features(self, df: pd.DataFrame, periods: List[int] = None) -> pd.DataFrame:
+        if periods is None:
+            periods = [8, 14, 21, 34, 55]
+
         df = df.copy()
-        for p in periods:
-            df[f'%-rsi-{p}'] = ta.RSI(df['close'], timeperiod=p)
-            df[f'%-sma-{p}'] = ta.SMA(df['close'], timeperiod=p)
-            df[f'%-ema-{p}'] = ta.EMA(df['close'], timeperiod=p)
-            df[f'%-roc-{p}'] = ta.ROC(df['close'], timeperiod=p)
-            if 'high' in df and 'low' in df and 'volume' in df:
-                df[f'%-mfi-{p}'] = ta.MFI(df['high'], df['low'], df['close'], df['volume'], timeperiod=p)
-        df['%-volume_ratio'] = df['volume'] / df['volume'].rolling(20).mean()
+
+        for period in periods:
+            df[f"%-rsi-{period}"] = ta.rsi(df["close"], length=period)
+            df[f"%-sma-{period}"] = ta.sma(df["close"], length=period)
+            df[f"%-ema-{period}"] = ta.ema(df["close"], length=period)
+            df[f"%-roc-{period}"] = ta.roc(df["close"], length=period)
+
+            if "volume" in df.columns:
+                vol_ma = df["volume"].rolling(window=period).mean()
+                df[f"%-vol_ratio-{period}"] = df["volume"] / (vol_ma + 1e-10)
+
+        df["%-returns"] = df["close"].pct_change()
         return df
+
+    def get_feature_columns(self, df: pd.DataFrame) -> List[str]:
+        return [col for col in df.columns if col.startswith("%-")]
