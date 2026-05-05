@@ -1,0 +1,17 @@
+{
+  "app_name": "Arkhe Market",
+  "company": "Arkhe Holdings",
+  "tagline": "Market intelligence from first principles.",
+  "colors": {
+    "background": "#05090D",
+    "panel": "#0B1118",
+    "panel_soft": "#111923",
+    "border": "rgba(91, 255, 232, 0.28)",
+    "cyan": "#5BFFE8",
+    "cyan_soft": "#19C7B8",
+    "gold": "#C9A24A",
+    "text": "#F7F7F2",
+    "muted": "#9CA7AE",
+    "danger": "#FF4D6D"
+  }
+}

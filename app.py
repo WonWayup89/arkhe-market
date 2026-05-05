@@ -1,5 +1,6 @@
 import time
 import streamlit as st
+from ui.theme import apply_theme, arkhe_hero
 from arkhe_market_core.ml.features.feature_logger import log_market_state
 
 from brokers.broker_session_manager import BrokerSessionManager
