@@ -1,0 +1,2 @@
+timestamp,symbol,side,price,quantity,stop_loss,reason,regime,sentiment
+2026-04-06T19:41:30.970293+00:00,BTC-USD,buy,69845.92,4.5e-07,560.9605714285708,BUY 3pts: trend+, vol✓, OBV↑,trending_up,neutral

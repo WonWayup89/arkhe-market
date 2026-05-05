@@ -1,0 +1,17 @@
+{
+  "cash": 833.3333333333334,
+  "asset_qty": 0.0,
+  "avg_entry": 0.0,
+  "last_price": 6645.75,
+  "realized_pnl": 0.0,
+  "gross_realized_pnl": 0.0,
+  "total_fees": 0.0,
+  "total_commission": 0.0,
+  "total_spread_cost": 0.0,
+  "total_slippage_cost": 0.0,
+  "total_execution_drag": 0.0,
+  "trade_count": 0,
+  "win_count": 0,
+  "loss_count": 0,
+  "trades": []
+}

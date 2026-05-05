@@ -1,0 +1,38 @@
+{
+  "cash": 369.27380212338807,
+  "asset_qty": 0.0695449,
+  "avg_entry": 82.33814235999999,
+  "last_price": 81.74,
+  "realized_pnl": 0.0,
+  "gross_realized_pnl": 0.0,
+  "total_fees": 0.034152273617964,
+  "total_commission": 0.034152273617964,
+  "total_spread_cost": 0.004545454664000001,
+  "total_slippage_cost": 0.005681818330000001,
+  "total_execution_drag": 0.044379546611964006,
+  "trade_count": 1,
+  "win_count": 0,
+  "loss_count": 0,
+  "trades": [
+    {
+      "time": "2026-04-06T19:41:31.210393+00:00",
+      "symbol": "SOL-USD",
+      "side": "buy",
+      "qty": 0.0695449,
+      "requested_price": 81.7,
+      "price": 81.84706,
+      "value": 5.692045602994001,
+      "commission": 0.034152273617964,
+      "spread_cost": 0.004545454664000001,
+      "slippage_cost": 0.005681818330000001,
+      "total_cost": 0.044379546611964006,
+      "fee_profile": {
+        "commission_rate": 0.006,
+        "spread_bps": 8.0,
+        "slippage_bps": 10.0,
+        "min_notional": 25.0
+      },
+      "reason": "BUY 4pts: rsi<45, trend+, <MA, OBV\u2191"
+    }
+  ]
+}

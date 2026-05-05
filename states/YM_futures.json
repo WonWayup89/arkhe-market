@@ -1,0 +1,39 @@
+{
+  "cash": 833.2803770594373,
+  "asset_qty": 1.13e-06,
+  "avg_entry": 46863.959200000005,
+  "last_price": 46853.0,
+  "realized_pnl": 0.0,
+  "gross_realized_pnl": 0.0,
+  "total_fees": 2.825e-06,
+  "total_commission": 2.825e-06,
+  "total_spread_cost": 1.0582224e-05,
+  "total_slippage_cost": 3.1746671999999995e-05,
+  "total_execution_drag": 4.5153896e-05,
+  "trade_count": 1,
+  "win_count": 0,
+  "loss_count": 0,
+  "trades": [
+    {
+      "time": "2026-04-06T19:41:33.616991+00:00",
+      "symbol": "YM",
+      "side": "buy",
+      "qty": 1.13e-06,
+      "requested_price": 46824.0,
+      "price": 46861.459200000005,
+      "value": 0.052953448896000004,
+      "commission": 2.825e-06,
+      "spread_cost": 1.0582224e-05,
+      "slippage_cost": 3.1746671999999995e-05,
+      "total_cost": 4.5153896e-05,
+      "fee_profile": {
+        "commission_rate": 0.0,
+        "fee_per_contract": 2.5,
+        "spread_bps": 2.0,
+        "slippage_bps": 6.0,
+        "min_notional": 100.0
+      },
+      "reason": "BUY 3pts: trend+, MACD+, OBV\u2191"
+    }
+  ]
+}

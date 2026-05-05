@@ -1,0 +1,38 @@
+{
+  "cash": 624.0781029763565,
+  "asset_qty": 0.00261954,
+  "avg_entry": 351.93088238525394,
+  "last_price": 352.32000732421875,
+  "realized_pnl": 0.0,
+  "gross_realized_pnl": 0.0,
+  "total_fees": 0.0,
+  "total_commission": 0.0,
+  "total_spread_cost": 0.00018428726109814456,
+  "total_slippage_cost": 0.00027643089164721676,
+  "total_execution_drag": 0.0004607181527453613,
+  "trade_count": 1,
+  "win_count": 0,
+  "loss_count": 0,
+  "trades": [
+    {
+      "time": "2026-04-06T19:41:32.786637+00:00",
+      "symbol": "TSLA",
+      "side": "buy",
+      "qty": 0.00261954,
+      "requested_price": 351.7550048828125,
+      "price": 351.93088238525394,
+      "value": 0.9218970236434681,
+      "commission": 0.0,
+      "spread_cost": 0.00018428726109814456,
+      "slippage_cost": 0.00027643089164721676,
+      "total_cost": 0.0004607181527453613,
+      "fee_profile": {
+        "commission_rate": 0.0,
+        "spread_bps": 2.0,
+        "slippage_bps": 3.0,
+        "min_notional": 50.0
+      },
+      "reason": "BUY 3pts: rsi<35, <MA"
+    }
+  ]
+}

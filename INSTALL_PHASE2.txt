@@ -1,0 +1,20 @@
+Phase 2 install
+
+1. Backup current Arkhe Market:
+   cd ~/Downloads
+   cp -R Arkhe Market Arkhe Market_backup_before_phase2
+
+2. Unzip the patch:
+   unzip arkhe_market_v4_phase2_patch.zip -d Arkhe Market_phase2_temp
+
+3. Copy into project:
+   cp -R Arkhe Market_phase2_temp/* Arkhe Market/
+
+4. Restart:
+   cd ~/Downloads/Arkhe Market
+   source venv/bin/activate
+   pkill -f streamlit
+   streamlit run app.py
+
+5. Ensure logo exists:
+   ~/Downloads/Arkhe Market/assets/arkhe_market_logo.png

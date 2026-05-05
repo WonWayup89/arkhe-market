@@ -1,0 +1,18 @@
+Phase 5 install
+
+1. Backup current Arkhe Market
+   cd ~/Downloads
+   cp -R Arkhe Market Arkhe Market_backup_before_phase5
+
+2. Unzip patch
+   unzip arkhe_market_v4_phase5_polish_patch.zip -d Arkhe Market_phase5_temp
+
+3. Copy into live project
+   cp -R Arkhe Market_phase5_temp/* Arkhe Market/
+
+4. Restart
+   cd ~/Downloads/Arkhe Market
+   source venv/bin/activate
+   pip install plotly pandas
+   pkill -f streamlit
+   streamlit run app.py

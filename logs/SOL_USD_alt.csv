@@ -1,0 +1,2 @@
+timestamp,symbol,side,price,quantity,stop_loss,reason,regime,sentiment
+2026-04-06T19:41:31.220815+00:00,SOL-USD,buy,81.7,0.0695449,0.9899999999999993,BUY 4pts: rsi<45, trend+, <MA, OBV↑,mixed,neutral

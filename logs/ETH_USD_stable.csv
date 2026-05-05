@@ -1,0 +1,2 @@
+timestamp,symbol,side,price,quantity,stop_loss,reason,regime,sentiment
+2026-04-06T19:41:31.091345+00:00,ETH-USD,buy,2144.86,0.00038053,21.44142857142862,BUY 3pts: trend+, <MA, OBV↑,trending_up,neutral

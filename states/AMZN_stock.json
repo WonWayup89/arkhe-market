@@ -1,0 +1,61 @@
+{
+  "cash": 624.9982345216445,
+  "asset_qty": 0.0,
+  "avg_entry": 0.0,
+  "last_price": 212.28391114807127,
+  "realized_pnl": -0.0017654783555705045,
+  "gross_realized_pnl": -0.0017654783555705045,
+  "total_fees": 0.0,
+  "total_commission": 0.0,
+  "total_spread_cost": 0.00113398495184729,
+  "total_slippage_cost": 0.0017009774277709348,
+  "total_execution_drag": 0.0028349623796182248,
+  "trade_count": 2,
+  "win_count": 0,
+  "loss_count": 1,
+  "trades": [
+    {
+      "time": "2026-04-06T19:41:32.210291+00:00",
+      "symbol": "AMZN",
+      "side": "buy",
+      "qty": 0.01335042,
+      "requested_price": 212.30999755859375,
+      "price": 212.41615255737304,
+      "value": 2.835844851425004,
+      "commission": 0.0,
+      "spread_cost": 0.0005668855275212403,
+      "slippage_cost": 0.0008503282912818602,
+      "total_cost": 0.0014172138188031005,
+      "fee_profile": {
+        "commission_rate": 0.0,
+        "spread_bps": 2.0,
+        "slippage_bps": 3.0,
+        "min_notional": 50.0
+      },
+      "reason": "BUY 3pts: trend+, MACD+, OBV\u2191"
+    },
+    {
+      "time": "2026-04-06T19:45:55.890508+00:00",
+      "symbol": "AMZN",
+      "side": "sell",
+      "qty": 0.01335042,
+      "requested_price": 212.39010620117188,
+      "price": 212.28391114807127,
+      "value": 2.8340793730694336,
+      "net_value": 2.8340793730694336,
+      "commission": 0.0,
+      "spread_cost": 0.0005670994243260498,
+      "slippage_cost": 0.0008506491364890747,
+      "total_cost": 0.0014177485608151245,
+      "gross_realized_pnl": -0.0017654783555705045,
+      "realized_pnl": -0.0017654783555705045,
+      "fee_profile": {
+        "commission_rate": 0.0,
+        "spread_bps": 2.0,
+        "slippage_bps": 3.0,
+        "min_notional": 50.0
+      },
+      "reason": "SELL 2pts: rsi>60, stoch\u2191"
+    }
+  ]
+}

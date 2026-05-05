@@ -1,0 +1,14 @@
+{
+  "app_name": "Arkhe Market",
+  "tagline": "Market intelligence from first principles.",
+  "company": "Arkhe Holdings",
+  "domain": "arkheholdings.net",
+  "mode": "Paper Trading",
+  "theme": {
+    "background": "#070707",
+    "panel": "#111111",
+    "gold": "#C9A24A",
+    "amber": "#B66A1E",
+    "text": "#F5F1E8"
+  }
+}

@@ -1,0 +1,5 @@
+action,agent_mode,agent_regime,asset_class,feature_equity_crypto_cash,feature_equity_crypto_equity,feature_equity_crypto_mode,feature_equity_crypto_source,feature_equity_futures_cash,feature_equity_futures_equity,feature_equity_futures_mode,feature_equity_futures_source,feature_equity_stocks_cash,feature_equity_stocks_equity,feature_equity_stocks_mode,feature_equity_stocks_source,feature_ok,feature_price,feature_volatility,symbol,timestamp
+,test,,global,5000.0,5000.0,test,test,5000.0,5000.0,test,test,5000.0,5000.0,test,test,,,,SYSTEM,2026-04-06T07:28:06.262172
+,manual,,global,,,,,,,,,,,,,1,,,TEST,2026-04-06T07:30:34.651604
+,test,,global,5000.0,5000.0,test,test,5000.0,5000.0,test,test,5000.0,5000.0,test,test,,,,SYSTEM,2026-04-06T07:30:36.083970
+,manual,test,global,,,,,,,,,,,,,,1,0.1,TEST,2026-04-06T07:33:17.986915

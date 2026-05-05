@@ -1,0 +1,23 @@
+Phase 6 install
+
+1. Back up Arkhe Market
+   cd ~/Downloads
+   cp -R Arkhe Market Arkhe Market_backup_before_phase6
+
+2. Unzip this patch
+   unzip arkhe_market_phase6_testmode_balance_patch.zip -d Arkhe Market_phase6_temp
+
+3. Copy patch into Arkhe Market
+   cp -R Arkhe Market_phase6_temp/* Arkhe Market/
+
+4. Restart
+   cd ~/Downloads/Arkhe Market
+   source venv/bin/activate
+   pkill -f streamlit
+   streamlit run app.py
+
+5. Verify
+   - no broker connected should show TEST mode
+   - Seed Test Capital should set 5000 per market
+   - Reset Test Environment should restore defaults
+   - command center wallet cards should reflect resolved balances

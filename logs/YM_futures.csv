@@ -1,0 +1,2 @@
+timestamp,symbol,side,price,quantity,stop_loss,reason,regime,sentiment
+2026-04-06T19:41:33.617192+00:00,YM,buy,46824.0,1.13e-06,189.7,BUY 3pts: trend+, MACD+, OBV↑,mixed,neutral

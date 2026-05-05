@@ -1,0 +1,39 @@
+{
+  "cash": 829.4109211638216,
+  "asset_qty": 0.03399553,
+  "avg_entry": 115.38023291625977,
+  "last_price": 112.88023291625977,
+  "realized_pnl": 0.0,
+  "gross_realized_pnl": 0.0,
+  "total_fees": 0.084988825,
+  "total_commission": 0.084988825,
+  "total_spread_cost": 0.0007668711719647675,
+  "total_slippage_cost": 0.002300613515894302,
+  "total_execution_drag": 0.08805630968785907,
+  "trade_count": 1,
+  "win_count": 0,
+  "loss_count": 0,
+  "trades": [
+    {
+      "time": "2026-04-06T19:41:33.723333+00:00",
+      "symbol": "CL",
+      "side": "buy",
+      "qty": 0.03399553,
+      "requested_price": 112.79000091552734,
+      "price": 112.88023291625977,
+      "value": 3.8374233445116968,
+      "commission": 0.084988825,
+      "spread_cost": 0.0007668711719647675,
+      "slippage_cost": 0.002300613515894302,
+      "total_cost": 0.08805630968785907,
+      "fee_profile": {
+        "commission_rate": 0.0,
+        "fee_per_contract": 2.5,
+        "spread_bps": 2.0,
+        "slippage_bps": 6.0,
+        "min_notional": 100.0
+      },
+      "reason": "BUY 5pts: MA\u2191, MACD\u2191, OBV\u2191"
+    }
+  ]
+}

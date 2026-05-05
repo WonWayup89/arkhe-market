@@ -1,0 +1,29 @@
+Arkhe Market V4 patch install
+
+1. Copy your logo into:
+   assets/arkhe_market_logo.png
+
+2. From Terminal:
+   cd ~/Downloads
+   cp -R Arkhe Market Arkhe Market_backup_before_v4
+
+3. Unzip this patch:
+   unzip arkhe_market_v4_patch.zip -d Arkhe Market_v4_patch_temp
+
+4. Copy patch into your live project:
+   cp -R Arkhe Market_v4_patch_temp/* Arkhe Market/
+
+5. Restart:
+   cd ~/Downloads/Arkhe Market
+   source venv/bin/activate
+   pkill -f streamlit
+   streamlit run app.py
+
+Notes:
+- This patch expects your existing backend files to remain in place:
+  multi_portfolio_agent.py
+  data_feeds.py
+  coinbase_client.py
+  alpaca_client.py
+  tastytrade_client.py if present
+- If arkhe_market_logo.png is missing, the app will still run and show a text fallback.

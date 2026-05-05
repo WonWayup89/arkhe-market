@@ -1,0 +1,38 @@
+{
+  "cash": 1749.177441377526,
+  "asset_qty": 0.00038053,
+  "avg_entry": 2161.6130724880004,
+  "last_price": 2140.75,
+  "realized_pnl": 0.0,
+  "gross_realized_pnl": 0.0,
+  "total_fees": 0.004905916237418641,
+  "total_commission": 0.004905916237418641,
+  "total_spread_cost": 0.0006529468606400001,
+  "total_slippage_cost": 0.0008161835758000001,
+  "total_execution_drag": 0.006375046673858641,
+  "trade_count": 1,
+  "win_count": 0,
+  "loss_count": 0,
+  "trades": [
+    {
+      "time": "2026-04-06T19:41:31.091117+00:00",
+      "symbol": "ETH-USD",
+      "side": "buy",
+      "qty": 0.00038053,
+      "requested_price": 2144.86,
+      "price": 2148.720748,
+      "value": 0.8176527062364402,
+      "commission": 0.004905916237418641,
+      "spread_cost": 0.0006529468606400001,
+      "slippage_cost": 0.0008161835758000001,
+      "total_cost": 0.006375046673858641,
+      "fee_profile": {
+        "commission_rate": 0.006,
+        "spread_bps": 8.0,
+        "slippage_bps": 10.0,
+        "min_notional": 25.0
+      },
+      "reason": "BUY 3pts: trend+, <MA, OBV\u2191"
+    }
+  ]
+}

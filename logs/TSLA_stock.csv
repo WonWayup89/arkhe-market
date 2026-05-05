@@ -1,0 +1,2 @@
+timestamp,symbol,side,price,quantity,stop_loss,reason,regime,sentiment
+2026-04-06T19:41:32.787052+00:00,TSLA,buy,351.7550048828125,0.00261954,6.7828901018415175,BUY 3pts: rsi<35, <MA,mixed,bearish
