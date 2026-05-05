@@ -3,7 +3,7 @@ run_loop.py – Headless loop for continuous signal execution.
 """
 
 import time
-from multi_portfolio_agent import MultiPortfolioAgent
+from arkhe_market_core.multi_portfolio_agent import MultiPortfolioAgent
 
 
 def main() -> None:

@@ -9,6 +9,11 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 from arkhe_market_core.test_cost_agent import simulate_fill, get_cost_profile
+# Atomic state writes — see services/atomic_io.py for rationale.
+# The audit identified torn JSON writes / lost cooldowns as a real risk
+# when the run loop, Streamlit UI, and manual actions all touch the
+# same state files concurrently.
+from services.atomic_io import atomic_write_json, file_lock
 
 
 class PaperEngine:
@@ -60,8 +65,11 @@ class PaperEngine:
             return state
 
     def _save_state(self, state: Dict[str, Any]) -> None:
-        with open(self.state_path, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2)
+        # Atomic write under a coarse advisory lock so concurrent writers
+        # can't tear the JSON file. Reads do NOT take the lock — they
+        # tolerate seeing the previous version of the file.
+        with file_lock(self.state_path):
+            atomic_write_json(self.state_path, state)
 
     def mark_price(self, price: float) -> None:
         self.state["last_price"] = float(price)

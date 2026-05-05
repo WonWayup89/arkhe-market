@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import requests
 import pandas as pd
-from data_feeds import FUTURES_YF_MAP
+from arkhe_market_core.data_feeds import FUTURES_YF_MAP
 
 try:
     import yfinance as yf

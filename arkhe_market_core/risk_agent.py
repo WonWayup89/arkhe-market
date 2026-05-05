@@ -65,17 +65,31 @@ class RiskAgent:
         return loss >= self._start_day_equity * self.daily_drawdown_limit
 
     def is_trading_time(self) -> bool:
+        # Venue-aware session check. Audit-driven change: previously this
+        # bucketed by UTC hour, treating futures as effectively 24/7 and
+        # stocks as a rough UTC window — both wrong enough to allow
+        # trades in closed sessions in live mode.
+        #
+        # Delegates to services.market_calendar.is_market_open, which
+        # respects exchange timezones, weekends, the CME daily 17:00–18:00
+        # halt, and holidays registered via market_calendar.register_holidays.
         if self.test_mode:
             return True
-        now = datetime.now(timezone.utc)
-        # Futures & crypto: block weekends for stocks only
-        if self.market_type == "stock" and now.weekday() >= 5:
-            return False
-        h = now.hour
-        for start, end in self.trading_hours:
-            if start <= h <= end:
-                return True
-        return False
+
+        from services.market_calendar import is_market_open
+
+        # `market_type` values: 'stable' | 'alt' | 'stock' | 'futures'.
+        # Map them onto canonical asset classes the calendar understands.
+        if self.market_type in ("stable", "alt"):
+            asset_class = "crypto"
+        elif self.market_type == "stock":
+            asset_class = "stocks"
+        elif self.market_type == "futures":
+            asset_class = "futures"
+        else:
+            asset_class = "crypto"
+
+        return is_market_open(asset_class)
 
     def calculate_position_size(
         self, price: float, stop_distance: float, vol_size_factor: float = 1.0,

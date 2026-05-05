@@ -7,6 +7,7 @@ import streamlit as st
 from services.command_center_pipeline import log_market_outputs
 from ui.cards import market_summary_row, section_intro
 from ui.tables import show_table
+from ui.constellation import market_constellation
 from arkhe_market_core.ml.inference.symbol_scorer import score_symbol
 from arkhe_market_core.ml.inference.neural_gate import neural_gate
 
@@ -47,6 +48,11 @@ def render_crypto(agent, config, broker):
     crypto_eq = snap["stable"]["equity"] + snap["alt"]["equity"]
 
     section_intro("Crypto", "Core market workspace")
+    market_constellation(
+        "crypto",
+        list(config.get("stable_symbols", [])) + list(config.get("alt_symbols", [])),
+        height=320,
+    )
 
     tabs = st.tabs(["Overview", "Portfolio", "Live Prices", "Signals", "Expert Scan"])
 

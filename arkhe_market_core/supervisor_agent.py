@@ -27,6 +27,7 @@ from arkhe_market_core.execution_agent import ExecutionAgent
 from cooldown_store import CooldownStore
 from arkhe_market_core.fee_agent import decision_after_cost
 from services.live_market_resolver import live_market_status
+from arkhe_market_core.ml.ml_expert_agent import MLExpertAgent
 
 
 class SupervisorAgent:
@@ -47,6 +48,7 @@ class SupervisorAgent:
         slippage_bps: float = 5.0,
         data_feed: DataFeed = None,
         cooldown_store: CooldownStore = None,
+        ml_expert: "MLExpertAgent | None" = None,
     ) -> None:
         self.symbol = symbol
         self.market_type = market_type
@@ -75,12 +77,16 @@ class SupervisorAgent:
             slippage_bps=slippage_bps,
         )
         self.cooldowns = cooldown_store or CooldownStore()
+        # Optional consultative ML advisor. Never gates trades on its own —
+        # its output is added to run_experts() for logging and (eventually)
+        # combined scoring. Pass `ml_expert=MLExpertAgent()` to enable.
+        self.ml_expert = ml_expert
 
     # ── data ───────────────────────────────────────────────────────
     def fetch_candles(self) -> pd.DataFrame:
         if self.asset_class == "crypto":
             return self.feed.fetch_crypto(self.symbol, self.timeframe, self.history_limit)
-        elif self.asset_class == "stock":
+        elif self.asset_class in ("stock", "stocks"):
             return self.feed.fetch_stock(self.symbol, self.timeframe, self.history_limit)
         elif self.asset_class == "futures":
             return self.feed.fetch_futures(self.symbol, self.timeframe, self.history_limit)
@@ -89,7 +95,7 @@ class SupervisorAgent:
     def get_live_price(self) -> float:
         if self.asset_class == "crypto":
             return self.feed.live_price_crypto(self.symbol)
-        elif self.asset_class == "stock":
+        elif self.asset_class in ("stock", "stocks"):
             return self.feed.live_price_stock(self.symbol)
         elif self.asset_class == "futures":
             return self.feed.live_price_futures(self.symbol)
@@ -98,18 +104,11 @@ class SupervisorAgent:
 
 
     def _market_control_state(self):
-        import streamlit as st
-        key_base = self.asset_class
-        enabled = bool(st.session_state.get(f"{key_base}_enabled", True))
-        paused = bool(st.session_state.get(f"{key_base}_paused", False))
-        override_minimum = bool(st.session_state.get(f"{key_base}_override_minimum", False))
-        connected = bool(st.session_state.get(f"live_{key_base}_connected", False))
-        return {
-            "enabled": enabled,
-            "paused": paused,
-            "override_minimum": override_minimum,
-            "connected": connected,
-        }
+        # Plain-Python market control read — no Streamlit dependency in the
+        # engine path. The Streamlit sidebar mutates the same store via
+        # services.market_controls.set_market_control(...).
+        from services.market_controls import get_market_control
+        return get_market_control(self.asset_class)
 
     def _live_status(self):
         try:
@@ -157,6 +156,16 @@ class SupervisorAgent:
         sent_info = self.sentiment.assess(df)
         indicators = self.technical.indicator_summary(df)
 
+        # Consultative ML advisor — purely informational here, does not
+        # change `signal`. Wire into the trade path only after backtesting.
+        ml_info = None
+        if self.ml_expert is not None:
+            try:
+                ml_info = self.ml_expert.analyze(df)
+            except Exception as e:  # noqa: BLE001
+                ml_info = {"signal": None, "confidence": 0.0, "prediction": 0.0,
+                           "reason": f"ml_error:{type(e).__name__}", "mode": "error"}
+
         return {
             "price": latest_price,
             "signal": signal,
@@ -166,9 +175,35 @@ class SupervisorAgent:
             "vol": vol_info,
             "regime": regime_info,
             "sentiment": sent_info,
+            "ml": ml_info,
             "indicators": indicators,
             "risk": self.risk.risk_summary(),
         }
+
+    # ── pre-trade mark to market ───────────────────────────────────
+    def _pretrade_mark_to_market(self) -> None:
+        """
+        Pull a live (or last-known) price and mark the paper engine before
+        the drawdown gate runs. The audit found that the gate previously
+        used stale equity from the prior loop, allowing one extra cycle
+        of trades to fire after a fast loss had already breached the
+        daily limit.
+
+        Best-effort: any failure here is logged and ignored — the gate
+        will still run on whatever equity it has.
+        """
+        try:
+            price = float(self.get_live_price())
+        except Exception:
+            return
+        if price <= 0:
+            return
+        try:
+            self.execution.mark_price(price)
+            snap = self.execution.paper.snapshot()
+            self.risk.update_balance_position(snap)
+        except Exception:
+            return
 
     # ── main cycle ─────────────────────────────────────────────────
     def run_once(self) -> str:
@@ -184,6 +219,10 @@ class SupervisorAgent:
 
         if not self.test_mode and not status.get("live_eligible", False):
             return f"{self.symbol}: 🔒 live_block {status.get('reason','unknown')} balance={round(status.get('balance',0),2)} min={round(status.get('minimum_live_balance',0),2)}"
+
+        # Mark to market before the drawdown gate so it sees current
+        # equity, not yesterday's. Critical for fast-moving sessions.
+        self._pretrade_mark_to_market()
 
         if self.risk.exceeded_drawdown():
             return f"{self.symbol}: ⛔ drawdown limit"

@@ -21,8 +21,30 @@ MINIMUMS = {
     },
 }
 
+# Defensive alias map — the audit found a `"stock"` vs `"stocks"` key
+# mismatch that silently bypassed live-account minimums for stock
+# accounts. Normalizing here means a single misnamed call site can never
+# again silently miss the MINIMUMS table.
+_ASSET_CLASS_ALIASES = {
+    "stock":    "stocks",
+    "stocks":   "stocks",
+    "equity":   "stocks",
+    "equities": "stocks",
+    "crypto":   "crypto",
+    "cryptos":  "crypto",
+    "futures":  "futures",
+    "future":   "futures",
+}
+
+
+def _canonical_asset_class(asset_class: str) -> str:
+    if asset_class is None:
+        return ""
+    return _ASSET_CLASS_ALIASES.get(str(asset_class).strip().lower(), str(asset_class))
+
+
 def capital_health(asset_class: str, balance: float) -> str:
-    rules = MINIMUMS.get(asset_class, {})
+    rules = MINIMUMS.get(_canonical_asset_class(asset_class), {})
     b = float(balance or 0)
 
     if b < float(rules.get("unsafe", 0)):
@@ -34,9 +56,10 @@ def capital_health(asset_class: str, balance: float) -> str:
     return "healthy"
 
 def live_market_status(asset_class: str, connected: bool, balance: float, override_minimum: bool = False, market_enabled: bool = True, market_paused: bool = False) -> Dict[str, object]:
-    health = capital_health(asset_class, balance)
-    recommended = float(MINIMUMS.get(asset_class, {}).get("recommended", 0))
-    eligible_min = float(MINIMUMS.get(asset_class, {}).get("eligible", 0))
+    canonical = _canonical_asset_class(asset_class)
+    health = capital_health(canonical, balance)
+    recommended = float(MINIMUMS.get(canonical, {}).get("recommended", 0))
+    eligible_min = float(MINIMUMS.get(canonical, {}).get("eligible", 0))
 
     under_minimum = float(balance or 0) < eligible_min
     live_eligible = bool(connected) and (not under_minimum or bool(override_minimum))

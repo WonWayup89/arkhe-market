@@ -1,7 +1,7 @@
 import pandas as pd
 from services.live_market_resolver import live_market_status
 import streamlit as st
-from ui.constellation_cards import render_crypto_constellation_card
+from ui.constellation import system_constellation
 from services.command_center_pipeline import get_recent_activity, get_summary
 
 def _metric_row(items):
@@ -123,7 +123,7 @@ def _collect_live_status_rows(multi_agent):
 
 
 def render_command_center(agent, config, broker_manager):
-    render_crypto_constellation_card()
+    system_constellation(height=420)
     st.subheader("Command Center")
     st.caption("Cross market visibility and operations")
 

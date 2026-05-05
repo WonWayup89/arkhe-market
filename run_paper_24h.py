@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from arkhe_market_core.multi_portfolio_agent import MultiPortfolioAgent
+from arkhe_market_core.swarm import calculate_strategy_score
 
 
 # ===================== CONFIG =====================
@@ -35,61 +36,82 @@ logger = logging.getLogger(__name__)
 
 
 def generate_final_report(agent: MultiPortfolioAgent, start_time: datetime, end_time: datetime):
-    """Generate comprehensive JSON and Markdown reports."""
+    """Generate comprehensive JSON and Markdown reports + anonymous swarm report."""
     try:
         snapshot = agent.snapshot()
-        
+        metrics = agent.compute_local_metrics()
+
         report = {
             "test_metadata": {
                 "start_time": start_time.isoformat(),
                 "end_time": end_time.isoformat(),
                 "duration_hours": TEST_DURATION_HOURS,
-                "total_loops": getattr(agent, '_loop_count', 0),
+                "total_loops": getattr(agent, "_loop_count", 0),
             },
             "portfolio_summary": {
                 "total_equity": snapshot.get("total_equity", 0),
                 "total_cash": snapshot.get("total_cash", 0),
-                "realized_pnl": snapshot.get("realized_pnl", 0),
-                "unrealized_pnl": snapshot.get("unrealized_pnl", 0),
+                "stable_equity": snapshot.get("stable", {}).get("equity", 0),
+                "alt_equity": snapshot.get("alt", {}).get("equity", 0),
+                "stocks_equity": snapshot.get("stocks", {}).get("equity", 0),
+                "futures_equity": snapshot.get("futures", {}).get("equity", 0),
             },
-            "per_sleeve": snapshot.get("sleeves", {}),
-            "risk_metrics": {
-                "max_drawdown": "TBD",  # Can be enhanced later
-                "win_rate": "TBD",
-            }
+            "performance_metrics": metrics,
+            "swarm": {
+                "opt_in": agent.swarm_client.opt_in,
+                "local_strategy_score": metrics["local_strategy_score"],
+            },
         }
 
-        # Save JSON
         with open(LOGS_DIR / "paper_test_report.json", "w") as f:
-            json.dump(report, f, indent=2)
+            json.dump(report, f, indent=2, sort_keys=True)
 
-        # Generate Markdown report
         md_content = f"""# Arkhe Market 24-Hour Paper Trading Test Report
 
 **Test Period:** {start_time.strftime('%Y-%m-%d %H:%M')} → {end_time.strftime('%Y-%m-%d %H:%M')}
 **Duration:** {TEST_DURATION_HOURS} hours
+**Loops Completed:** {report['test_metadata']['total_loops']}
 
 ## Portfolio Summary
 - **Total Equity**: ${report['portfolio_summary']['total_equity']:.2f}
 - **Total Cash**: ${report['portfolio_summary']['total_cash']:.2f}
-- **Realized PnL**: ${report['portfolio_summary']['realized_pnl']:.2f}
-- **Unrealized PnL**: ${report['portfolio_summary']['unrealized_pnl']:.2f}
+- **Stable Sleeve Equity**: ${report['portfolio_summary']['stable_equity']:.2f}
+- **Alt Sleeve Equity**: ${report['portfolio_summary']['alt_equity']:.2f}
+- **Stocks Sleeve Equity**: ${report['portfolio_summary']['stocks_equity']:.2f}
+- **Futures Sleeve Equity**: ${report['portfolio_summary']['futures_equity']:.2f}
+
+## Performance Metrics (approximate, derived from trade ledger)
+- **Total PnL**: ${metrics['total_pnl']:.2f}
+- **Trade Count**: {metrics['trade_count']}
+- **Win Rate**: {metrics['win_rate']:.2%}
+- **Profit Factor**: {metrics['profit_factor']:.2f}
+- **Sharpe (per-trade, not annualized)**: {metrics['sharpe']:.2f}
+- **Max Drawdown (vs. starting balance)**: {metrics['max_drawdown']:.2%}
+- **Local Strategy Score**: {metrics['local_strategy_score']:.3f}
+
+## Swarm
+- **Opt-in**: {report['swarm']['opt_in']} (set ARKHE_SWARM_OPT_IN=1 to share)
+- Anonymous report: `logs/daily_swarm_report.json`
 
 ## Risk Controls
-- All trades executed in PAPER mode
-- Daily drawdown limits enforced
-- Cooldowns respected
-
-**Test completed successfully. No real capital at risk.**
+- All trades executed in PAPER mode (test_mode=True forced)
+- Daily drawdown limit: 3%
+- Per-symbol cooldown: 5 minutes
+- No real capital at risk.
 """
-
         with open(LOGS_DIR / "paper_test_report.md", "w") as f:
             f.write(md_content)
 
         logger.info("✅ Final reports generated: logs/paper_test_report.json + .md")
 
+        # Anonymous swarm report — saved locally always; dispatched only if opted in.
+        try:
+            agent.generate_swarm_report()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Swarm report generation failed (non-fatal): {e}")
+
     except Exception as e:
-        logger.error(f"Failed to generate report: {e}")
+        logger.error(f"Failed to generate report: {e}", exc_info=True)
 
 
 def main():

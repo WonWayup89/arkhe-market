@@ -7,11 +7,21 @@ stocks, and futures.  Each symbol gets its own paper engine.
 
 import os
 import glob
-from typing import Dict, List, Optional
+import logging
+import math
+from typing import Any, Dict, List, Optional
 
 from arkhe_market_core.data_feeds import DataFeed
 from arkhe_market_core.supervisor_agent import SupervisorAgent
+from arkhe_market_core.ml.ml_expert_agent import MLExpertAgent
+from arkhe_market_core.swarm import (
+    SwarmClient,
+    SwarmCoordinator,
+    calculate_strategy_score,
+)
 from cooldown_store import CooldownStore
+
+logger = logging.getLogger(__name__)
 
 
 class MultiPortfolioAgent:
@@ -34,15 +44,27 @@ class MultiPortfolioAgent:
         cooldown_seconds: int = 900,
         stock_balance: float = 0.0,
         futures_balance: float = 0.0,
+        enable_ml_advisor: bool = True,
+        swarm_opt_in: Optional[bool] = None,
     ) -> None:
         self.total_balance = float(total_balance)
         self.stable_allocation = float(stable_allocation)
         self.alt_allocation = 1.0 - self.stable_allocation
 
-        self.stable_symbols = stable_symbols or ["BTC-USD", "ETH-USD"]
-        self.alt_symbols = alt_symbols or ["SOL-USD", "XRP-USD", "AVAX-USD", "SUI-USD"]
-        self.stock_symbols = stock_symbols or []
-        self.futures_symbols = futures_symbols or []
+        # Use `is None` instead of `or` so an explicit [] disables the
+        # sleeve entirely. The audit found that `[] or DEFAULT` was
+        # silently restoring defaults — meaning a caller who intended to
+        # disable a sleeve would instead trade the default instruments.
+        self.stable_symbols = (
+            ["BTC-USD", "ETH-USD"] if stable_symbols is None else list(stable_symbols)
+        )
+        self.alt_symbols = (
+            ["SOL-USD", "XRP-USD", "AVAX-USD", "SUI-USD"]
+            if alt_symbols is None
+            else list(alt_symbols)
+        )
+        self.stock_symbols = [] if stock_symbols is None else list(stock_symbols)
+        self.futures_symbols = [] if futures_symbols is None else list(futures_symbols)
 
         self.risk_pct_stable = float(risk_pct_stable)
         self.risk_pct_alt = float(risk_pct_alt)
@@ -61,6 +83,17 @@ class MultiPortfolioAgent:
 
         self.feed = DataFeed(cache_ttl=15)
         self.shared_cooldowns = CooldownStore()
+
+        # One ML advisor shared across all symbol supervisors. Heuristic
+        # mode unless arkhe_market_core/ml/models/amber_model.pkl loads.
+        self._shared_ml_expert: Optional[MLExpertAgent] = (
+            MLExpertAgent() if enable_ml_advisor else None
+        )
+
+        # Swarm layer — opt-in only, drives the daily anonymous report.
+        self.swarm_coordinator = SwarmCoordinator()
+        self.swarm_client = SwarmClient(opt_in=swarm_opt_in)
+
         self.agents: Dict[str, SupervisorAgent] = {}
         self._build_agents()
 
@@ -85,6 +118,7 @@ class MultiPortfolioAgent:
                 state_path=f"states/{s}_stable.json", log_path=f"logs/{s}_stable.csv",
                 cooldown_seconds=self.cooldown_seconds, data_feed=self.feed,
                 cooldown_store=self.shared_cooldowns,
+                ml_expert=self._shared_ml_expert,
             )
 
         for sym in self.alt_symbols:
@@ -97,18 +131,20 @@ class MultiPortfolioAgent:
                 state_path=f"states/{s}_alt.json", log_path=f"logs/{s}_alt.csv",
                 cooldown_seconds=self.cooldown_seconds, data_feed=self.feed,
                 cooldown_store=self.shared_cooldowns,
+                ml_expert=self._shared_ml_expert,
             )
 
         for sym in self.stock_symbols:
             s = self._safe(sym)
             self.agents[sym] = SupervisorAgent(
-                symbol=sym, market_type="stock", asset_class="stock",
+                symbol=sym, market_type="stock", asset_class="stocks",
                 timeframe=self.timeframe, history_limit=self.history_limit,
                 risk_pct=self.risk_pct_stock, daily_drawdown_limit=self.daily_drawdown_limit,
                 starting_balance=stock_each, test_mode=self.test_mode,
                 state_path=f"states/{s}_stock.json", log_path=f"logs/{s}_stock.csv",
                 cooldown_seconds=self.cooldown_seconds, data_feed=self.feed,
                 cooldown_store=self.shared_cooldowns,
+                ml_expert=self._shared_ml_expert,
             )
 
         for sym in self.futures_symbols:
@@ -121,6 +157,7 @@ class MultiPortfolioAgent:
                 state_path=f"states/{s}_futures.json", log_path=f"logs/{s}_futures.csv",
                 cooldown_seconds=self.cooldown_seconds, data_feed=self.feed,
                 cooldown_store=self.shared_cooldowns,
+                ml_expert=self._shared_ml_expert,
             )
 
     # ── run ─────────────────────────────────────────────────────────
@@ -201,6 +238,100 @@ class MultiPortfolioAgent:
             "total_equity": total_eq,
             "total_cash": stable["cash"] + alt["cash"] + stocks["cash"] + futures["cash"],
         }
+
+    # ── swarm metrics + reporting ──────────────────────────────────
+    def compute_local_metrics(self) -> Dict[str, float]:
+        """
+        Derive aggregate performance metrics from the current snapshot.
+
+        These are best-effort approximations from the data the paper
+        engine exposes today: trade-level P&L for profit factor, the
+        engine's own win_rate, equity vs. starting balance for a rough
+        drawdown estimate, and a Sharpe-flavored ratio of mean trade P&L
+        over std (no risk-free rate, no annualization). Honest about
+        being approximate — `local_strategy_score` is computed from this.
+        """
+        snap = self.snapshot()
+        all_trades: List[Dict[str, Any]] = []
+        win_rates: List[float] = []
+        for sleeve_key in ("stable", "alt", "stocks", "futures"):
+            sleeve = snap.get(sleeve_key, {}) or {}
+            for sym_snap in (sleeve.get("symbols") or {}).values():
+                trades = sym_snap.get("trades") or []
+                if isinstance(trades, list):
+                    all_trades.extend(t for t in trades if isinstance(t, dict))
+                wr = sym_snap.get("win_rate")
+                if isinstance(wr, (int, float)) and sym_snap.get("trade_count", 0):
+                    win_rates.append(float(wr))
+
+        # Profit factor from realized trade P&Ls (key may be "pnl" or "realized_pnl").
+        pnls: List[float] = []
+        for t in all_trades:
+            for k in ("pnl", "realized_pnl", "net_pnl"):
+                v = t.get(k)
+                if isinstance(v, (int, float)):
+                    pnls.append(float(v))
+                    break
+        gross_profit = sum(p for p in pnls if p > 0)
+        gross_loss = -sum(p for p in pnls if p < 0)
+        if gross_loss > 0:
+            profit_factor = gross_profit / gross_loss
+        elif gross_profit > 0:
+            profit_factor = 4.0  # cap — no losses yet means "great so far"
+        else:
+            profit_factor = 1.0
+
+        # Sharpe-flavored: mean(pnl) / std(pnl). Not annualized.
+        if len(pnls) >= 2:
+            mean_p = sum(pnls) / len(pnls)
+            var = sum((p - mean_p) ** 2 for p in pnls) / len(pnls)
+            std_p = math.sqrt(var)
+            sharpe = mean_p / std_p if std_p > 0 else 0.0
+        else:
+            sharpe = 0.0
+
+        win_rate = sum(win_rates) / len(win_rates) if win_rates else 0.0
+
+        total_equity = float(snap.get("total_equity", 0.0))
+        starting = self.total_balance + self.stock_balance + self.futures_balance
+        max_drawdown = max(0.0, (starting - total_equity) / starting) if starting > 0 else 0.0
+
+        total_pnl = float(snap.get("total_equity", 0.0)) - starting
+
+        metrics: Dict[str, float] = {
+            "sharpe": float(sharpe),
+            "win_rate": float(win_rate),
+            "profit_factor": float(profit_factor),
+            "max_drawdown": float(max_drawdown),
+            "trade_count": int(len(pnls)),
+            "total_pnl": float(total_pnl),
+        }
+        metrics["local_strategy_score"] = float(calculate_strategy_score(metrics))
+        return metrics
+
+    def generate_swarm_report(
+        self,
+        decisions: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Build (and dispatch, if opted in) the anonymous daily swarm report.
+
+        `decisions` is an optional bounded summary — only `decision_type`,
+        `regime`, `outcome` survive the privacy scrub.
+        """
+        metrics = self.compute_local_metrics()
+        portfolio_state = {
+            "positions": [
+                sym
+                for sym, agent in self.agents.items()
+                if agent.execution.paper.snapshot().get("asset_qty", 0)
+            ]
+        }
+        return self.swarm_client.send(
+            portfolio_state=portfolio_state,
+            performance=metrics,
+            decisions=decisions or [],
+        )
 
     # ── manual trade ───────────────────────────────────────────────
     def manual_trade(self, symbol: str, side: str, qty: float, price: float, reason: str = "manual") -> dict:

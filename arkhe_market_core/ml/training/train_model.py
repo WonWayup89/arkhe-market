@@ -4,8 +4,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPRegressor
 import joblib
 
-DATA = Path("ml/data/training_dataset.csv")
-MODEL_OUT = Path("ml/models/arkhe_market_model.pkl")
+# Canonical model path lives in arkhe_market_core.ml.config so the trainer,
+# the inference service, and the consultative ML expert all agree on which
+# file is in play. The audit found three different paths in the prior code.
+from arkhe_market_core.ml.config import model_path
+
+DATA = Path("arkhe_market_core/ml/data/training_dataset.csv")
+MODEL_OUT = model_path()
 
 df = pd.read_csv(DATA).fillna(0)
 

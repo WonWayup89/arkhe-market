@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 from ui.cards import market_summary_row, section_intro
 from ui.tables import show_table
+from ui.constellation import promotion_constellation
 
 
 TIER_EMOJI = {
@@ -35,6 +36,13 @@ def render_promotion_dashboard(promotion_supervisor, agent, symbols, starting_eq
     """Render the full promotion dashboard."""
 
     section_intro("Strategy Scoring & Promotion", "Evaluate, validate, and promote strategies from simulation to live")
+
+    # Pipeline constellation at top of view
+    try:
+        _pipeline_summary = promotion_supervisor.tier_summary()
+    except Exception:
+        _pipeline_summary = {}
+    promotion_constellation(_pipeline_summary, height=320)
 
     # ── Run cycle button ───────────────────────────────────────────
     c1, c2 = st.columns([1, 3])
